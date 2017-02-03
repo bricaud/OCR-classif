@@ -85,8 +85,9 @@ def auto_extract(texts_path,pickle_file):
 	# Write removed file to logfile
 	logfile = 'extract_log.csv'
 	with open(logfile,'w') as log_f:
+		log_f.write('List of empty files (no text found).')
 		for item in removed_files_list:
-  			log_f.write("%s\n" % item)
+  			log_f.write('%s\n' % item)
 	print('list of empty files written in {}'.format(logfile))
 	print('Saving to file {}'.format(pickle_file))
 	save(df,pickle_file)
