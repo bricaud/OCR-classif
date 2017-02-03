@@ -30,6 +30,8 @@ def png_to_txt(pngpath,short_name,txtpath,log_file):
 				print('Error encountered with file: {}\n'.format(filename))
 				with open(log_file, 'a') as logfile:
 					logfile.write('Error with file: {}\n'.format(filename))  # report errors
+			else:
+				print('Text extracted form file: {}\n'.format(filename))
 		except:
 			print('error extracting text with file {}'.format(filename))
 			with open(log_file, 'a') as logfile:
@@ -41,11 +43,11 @@ def pdf_to_png(pdf_file,short_name,png_path,page_limit=4):
 	out_name = short_name+'.%d.png'
 	out_file = os.path.join(png_path,out_name)
 	if platform.system() == 'Windows':
-		cmd_pdf2png = 'gswin32c -dSAFER -dNOPAUSE -q -r300x300 -sDEVICE=pnggray -dBATCH -dLastPage=' + page_limit + \
-		' -sOutputFile=' + out_file + ' ' + pdf_file
+		cmd_pdf2png = ('gswin32c -dSAFER -dNOPAUSE -q -r300x300 -sDEVICE=pnggray -dBATCH -dLastPage=' + str(page_limit) + 
+		' -sOutputFile=' + out_file + ' ' + pdf_file)
 	else:
-		cmd_pdf2png = 'gs -dSAFER -dNOPAUSE -q -r300x300 -sDEVICE=pnggray -dBATCH -dLastPage=' + page_limit + \
-		' -sOutputFile=' + out_file + ' ' + pdf_file
+		cmd_pdf2png = ('gs -dSAFER -dNOPAUSE -q -r300x300 -sDEVICE=pnggray -dBATCH -dLastPage=' + str(page_limit) + 
+		' -sOutputFile=' + out_file + ' ' + pdf_file)
 	proc_results = subprocess.run(cmd_pdf2png.split(), stdout=subprocess.PIPE,timeout=60)
 	return proc_results
 
@@ -59,14 +61,19 @@ with open(LOG_FILE1, 'a') as logfile:
 with open(LOG_FILE2, 'a') as logfile:
 				logfile.write('Logfile produced by pdf2txt.py\n') 
 
+# init paths
+png_path = os.path.join(PDF_PATH,'png')
+txt_path = os.path.join(PDF_PATH,'txt')
+if not os.path.exists(png_path):
+    os.makedirs(png_path)
+if not os.path.exists(txt_path):
+    os.makedirs(txt_path)   
+
 # Loop over all the file in the pdf folder		
 for pdf_file in glob.glob(os.path.join(PDF_PATH,'*.pdf')):
 	pdf_path,filename = os.path.split(pdf_file)
 	print('processing {}.'.format(filename))
 	short_name = filename[0:-4]
-	# paths
-	png_path = os.path.join(path,'/png')
-	txt_path = os.path.join(path,'/txt')
 	
 	try:
 		proc_results = pdf_to_png(pdf_file,short_name,png_path,page_limit=4)
