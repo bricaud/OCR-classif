@@ -3,7 +3,7 @@
 Set of Python programs to extract text from pdfs.
 It requires the installation of 
 * [Ghostscript](https://www.ghostscript.com/), for converting the pdf to one or several png files (one per page)
-* [Tesseract](https://www.ghostscript.com/), an open source OCR software to extract the text from the png files. 
+* [Tesseract](https://github.com/tesseract-ocr/tesseract), an open source OCR software to extract the text from the png files. 
 
 The convertion is done by calling:
 ```
