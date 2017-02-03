@@ -9,10 +9,12 @@ The convertion is done by calling:
 ```
 python3 pdf2txt.py
 ```
-The path where are stored the pdf files must be specified inside the python file.
+The path where the pdf files are stored must be specified inside the python file.
 
-The text can then be extracted from all the txt files and stored in a pandas dataframe and saved in a pickle file:
+The texts can then be extracted from all the txt files, stored in a pandas dataframe and saved in a single pickle file:
 ```
 python3 text_extractor.py
 ```
-This program relies on the toolbox *textbox.py*.
+This program relies on the toolbox *textbox.py*. The path of the txt file and the name of the pickle file must be specified within the python script.
+
+The projet [Grevia](https://github.com/bricaud/Grevia) can then be used to analyze the texts.
