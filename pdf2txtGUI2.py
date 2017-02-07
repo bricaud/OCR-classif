@@ -26,49 +26,52 @@ def ask_grevia_path():
 
 def run_pdf2txt(filepath):
 	if platform.system() == 'Windows':
-		cmd_pdf2txt = 'cmd /K python3 pdf2txt.py '+filepath
+		cmd_pdf2txt = 'start cmd.exe /K python pdf2txt.py '+filepath
 		#cmd_pdf2txt = 'cmd /C python3 pdf2txt.py '+filepath
 	else:
 		cmd_pdf2txt = 'xterm -e python3 pdf2txt.py '+filepath
 	try:
 		textbox.insert('end','Running pdf2txt...\n')
 		print('Running pdf2txt..Please wait.')
-		proc_results = subprocess.run(shlex.split(cmd_pdf2txt), stdout=subprocess.PIPE)
+		proc_results = subprocess.run(shlex.split(cmd_pdf2txt), shell=True, stdout=subprocess.PIPE)
 		textbox.insert('end','pdf2txt: process finished.\n')
 		textbox.insert('end','Now: run text_extractor.\n')
 	except:
-		print('Error while calling pdf2txt.')
+		print('Error while calling pdf2txt with {}'.format(cmd_pdf2txt))
 
 
 def run_text_extractor():
 	if platform.system() == 'Windows':
-		cmd_pdf2txt = 'cmd /K python3 text_extractor.py '+filepath
+		cmd_pdf2txt = 'start cmd.exe /K python text_extractor.py '+filepath
 	else:
 		cmd_pdf2txt = 'xterm -e python3 text_extractor.py '+filepath
 	try:
 		textbox.insert('end','Running text_extractor...\n')
 		print('Running text_extractor...Please wait.')
-		proc_results = subprocess.run(shlex.split(cmd_pdf2txt), stdout=subprocess.PIPE)
+		print(cmd_pdf2txt)
+		#proc_results = subprocess.run(shlex.split(cmd_pdf2txt), stdout=subprocess.PIPE)
+		proc_results = subprocess.run(cmd_pdf2txt, shell=True, stdout=subprocess.PIPE)
 	except:
-		print('Error while calling text_extractor.')
+		print('Error while calling text_extractor with {}'.format(cmd_pdf2txt))
 
 def run_build_graph():
 	global filepath
 	global grevia_path
 	if platform.system() == 'Windows':
-		cmd = 'cmd /K python3 create_graph_cmd.py '+filepath + ' ' + grevia_path
+		cmd = 'start cmd.exe /K python create_graph_cmd.py '+filepath + ' ' + grevia_path
 	else:
 		cmd = 'xterm -e python3 create_graph_cmd.py '+filepath + ' ' + grevia_path
 		#cmd = 'xterm -hold -e python3 create_graph_cmd.py '+filepath + ' ' + grevia_path
 	try:
 		textbox.insert('end','Building the graph...\n')
 		print('Building the graph...Please wait.')
-		proc_results = subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE)
+		print('Running {} ...'.format(cmd))
+		proc_results = subprocess.run(shlex.split(cmd), shell=True, stdout=subprocess.PIPE)
 		textbox.insert('end','Graph and classification done.\n')
 		textbox.insert('end','Check the csv file.\n')
 		textbox.insert('end','Thank you.\n')
 	except:
-		print('Error while calling create_graph_cmd.')	
+		print('Error while calling create_graph_cmd with: {}'.format(cmd))	
 
 # Decorator to write the output of the function inside the textbox of the GUI
 def decorator(func):

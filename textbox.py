@@ -21,8 +21,13 @@ def extract_text(path):
 		pbar.update(1)
 		path,txtfile = os.path.split(file)
 		fname = txtfile[0:-6] # this assumes a one digit page number appended to the name like this: file.1.txt
-		with open(file,'r') as text_file:
-			text_block = text_file.read()
+		print(txtfile)
+		print(file)
+		with open(file,'r', encoding='utf-8', errors='replace') as text_file:
+			try:
+				text_block = text_file.read()
+			except:
+				raise ValueError('Failed to read {}'.format(file))
 		df.loc[idx,'filename'] = fname
 		df.loc[idx,'text'] = text_block
 	pbar.close()
