@@ -17,7 +17,7 @@ parser.add_argument('folder',
 
 args = parser.parse_args()
 input_dic = vars(args)
-print(input_dic)
+print('Selected pdf folder: ',input_dic['folder'])
 PDF_PATH = input_dic['folder'] 
 #PDF_PATH = '/media/benjamin/Elements/pdfs/'
 
@@ -80,10 +80,11 @@ if not os.path.exists(png_path):
 if not os.path.exists(txt_path):
     os.makedirs(txt_path)   
 
-# Loop over all the file in the pdf folder		
-for pdf_file in glob.glob(os.path.join(PDF_PATH,'*.pdf')):
+# Loop over all the file in the pdf folder
+nb_files = len(list(glob.glob(os.path.join(PDF_PATH,'*.pdf'))))		
+for idx,pdf_file in enumerate(glob.glob(os.path.join(PDF_PATH,'*.pdf'))):
 	pdf_path,filename = os.path.split(pdf_file)
-	print('processing {}.'.format(filename))
+	print('processing {}. File {}/{}.'.format(filename,idx+1,nb_files))
 	short_name = filename[0:-4]
 	
 	try:

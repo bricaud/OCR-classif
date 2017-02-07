@@ -91,3 +91,4 @@ def auto_extract(texts_path,pickle_file):
 	print('list of empty files written in {}'.format(logfile))
 	print('Saving to file {}'.format(pickle_file))
 	save(df,pickle_file)
+	print('Saving done.')

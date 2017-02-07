@@ -11,7 +11,7 @@ parser.add_argument('folder',
 
 args = parser.parse_args()
 input_dic = vars(args)
-print(input_dic)
+print('Pdf path: ',input_dic['folder'])
 TXT_PATH = os.path.join(input_dic['folder'],'txt')
 #TXT_PATH = '/media/benjamin/Elements/pdfs/txt'
 PICKLE_PATH = os.path.join(input_dic['folder'],'pickle')
