@@ -10,7 +10,7 @@ import tqdm
 
 
 
-def run(PICKLE_FILE,GRAPH_NAME,GREVIA_PATH):
+def run(PICKLE_FILE,GRAPH_NAME,GREVIA_PATH,min_weight,max_iter):
 	""" Create the graph from the dataframe of texts."""
 	sys.path.append(GREVIA_PATH)
 	import grevia
@@ -20,6 +20,7 @@ def run(PICKLE_FILE,GRAPH_NAME,GREVIA_PATH):
 	filtered_text_list = []
 	for row in df.itertuples():
 		text = ' '.join(row.text_list)
+		text = text.lower()
 		filtered_text = re.findall('\w+', str(text), re.UNICODE)
 		#tokens = str(text).split()
 		filtered_text_list.append(filtered_text)
@@ -44,10 +45,11 @@ def run(PICKLE_FILE,GRAPH_NAME,GREVIA_PATH):
 	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes())))
 
 	# Merge the strongly connected nodes
-	GS = grevia.merge_strongly_connected_nodes_fast(GS,min_weight=15,max_iter=20000)
+	GS = grevia.merge_strongly_connected_nodes_fast(GS,min_weight,max_iter)
 	print('New graph size:')
 	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes())))
-	
+	# Normalize the weights and cut the weakest links 
+	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
 	# Save graph
 	nx.write_gpickle(GS,GRAPH_NAME)
 
@@ -62,16 +64,16 @@ def doc_classif(graph_name,text_pickle_file,GREVIA_PATH,csv_file):
 	print('Graph of documents created.')
 	print('Nb of edges: {}, nb of nodes: {}'.format(G_doc.size(),len(G_doc.nodes())))
 	# Shrink the graph
-	print('Removing weakest links...')
-	threshold = 5
-	G_doc = grevia.remove_weak_links(G_doc,threshold,weight='weight')
-	G_doc.remove_nodes_from(nx.isolates(G_doc))
+	#print('Removing weakest links...')
+	#threshold = 5
+	#G_doc = grevia.remove_weak_links(G_doc,threshold,weight='weight')
+	#G_doc.remove_nodes_from(nx.isolates(G_doc))
 	print('Nb of connected components: ',nx.number_connected_components(G_doc))
 	df = pd.read_pickle(text_pickle_file)
 	# Run the community detection
 	print('Running the community detection...')
 	subgraph_list = grevia.cluster_graph(G_doc,20)
 	grevia.clusters_info(subgraph_list)
-	cluster_name_list = grevia.subgraphs_to_filenames(subgraph_list,df)
+	cluster_name_list = grevia.subgraphs_to_filenames(subgraph_list,df,density=True)
 	clusters_table = grevia.output_filename_classification(cluster_name_list,csv_file)
 	print('Graph and classification done.')

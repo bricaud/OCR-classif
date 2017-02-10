@@ -21,8 +21,8 @@ def extract_text(path):
 		pbar.update(1)
 		path,txtfile = os.path.split(file)
 		fname = txtfile[0:-6] # this assumes a one digit page number appended to the name like this: file.1.txt
-		print(txtfile)
-		print(file)
+		#print(txtfile)
+		#print(file)
 		with open(file,'r', encoding='utf-8', errors='replace') as text_file:
 			try:
 				text_block = text_file.read()
