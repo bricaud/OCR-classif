@@ -7,7 +7,7 @@ import re
 import networkx as nx
 import tqdm
 import pickle
-grevia_path = '../Grevia'
+grevia_path = '../grevia'
 sys.path.append(grevia_path)
 import grevia
 
