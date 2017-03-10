@@ -17,5 +17,5 @@ TXT_PATH = os.path.join(input_dic['folder'],'txt')
 PICKLE_PATH = os.path.join(input_dic['folder'],'pickle')
 if not os.path.exists(PICKLE_PATH):
     os.makedirs(PICKLE_PATH)
-PICKLE_FILE = os.path.join(PICKLE_PATH,'texts.pkl')
+PICKLE_FILE = os.path.join(PICKLE_PATH,'texts2.pkl')
 textbox.auto_extract(TXT_PATH,PICKLE_FILE)

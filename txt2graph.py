@@ -3,41 +3,44 @@
 and to classify the documents from the graph.
 """
 import sys
-import pandas as pd
 import re
 import networkx as nx
 import tqdm
+import pickle
+grevia_path = '../Grevia'
+sys.path.append(grevia_path)
+import grevia
 
+def read_file(filename):
+	""" Read the pickle filename and return a dict of texts."""
+	with open(filename, 'rb') as handle:
+   		unserialized_data = pickle.load(handle)
+	return unserialized_data
 
+def filter_text(text):
+	""" filter the text: apply lower case and keep letters and numbers"""
+	text = text.lower()
+	filtered_text = re.findall('\w+', str(text), re.UNICODE)
+	return filtered_text
 
-def run(PICKLE_FILE,GRAPH_NAME,GREVIA_PATH,min_weight,max_iter):
+def run(PICKLE_FILE,GRAPH_NAME,min_weight,max_iter):
 	""" Create the graph from the dataframe of texts."""
-	sys.path.append(GREVIA_PATH)
-	import grevia
-	df = pd.read_pickle(PICKLE_FILE)
-
-	# filter the texts, make a list of words for each text
-	filtered_text_list = []
-	for row in df.itertuples():
-		text = ' '.join(row.text_list)
-		text = text.lower()
-		filtered_text = re.findall('\w+', str(text), re.UNICODE)
-		#tokens = str(text).split()
-		filtered_text_list.append(filtered_text)
-	dataframe_f = df[['filename','text','text_length']].copy()
-	dataframe_f.loc[:,'filtered_text'] = filtered_text_list
+	loaded_data = read_file(PICKLE_FILE)
+	data_dic = loaded_data[0]
+	data_index = loaded_data[1]
 
 	# Construct the graph
 	print('Creating the graph...')
 	GS = nx.DiGraph()
 	# initiate the progress bar
-	nb_of_texts = len(dataframe_f)
+	nb_of_texts = len(data_dic)
 	pbar = tqdm.tqdm(total=nb_of_texts)
-	for row in dataframe_f.itertuples():
-		text_id = row.Index
+	for key in data_dic.keys():
+		data_elem = data_dic[key]
+		text_id = data_elem['id']
+		list_of_words = filter_text(data_elem['text'])
 		text_data = {}
-		text_data['length'] = len(row.filtered_text)
-		list_of_words = row.filtered_text
+		text_data['length'] = len(list_of_words)
 		GS = grevia.add_string_of_words(GS,list_of_words,text_id,text_data)
 		pbar.update(1)
 	pbar.close()
@@ -53,12 +56,10 @@ def run(PICKLE_FILE,GRAPH_NAME,GREVIA_PATH,min_weight,max_iter):
 	# Save graph
 	nx.write_gpickle(GS,GRAPH_NAME)
 
-def doc_classif(graph_name,text_pickle_file,GREVIA_PATH,csv_file):
+def doc_classif(graph_name,text_pickle_file,csv_file):
 	""" Classification of the documents from the graph,
 	using community detection.
 	"""
-	sys.path.append(GREVIA_PATH)
-	import grevia
 	G = nx.read_gpickle(graph_name)
 	G_doc = grevia.doc_graph(G)
 	print('Graph of documents created.')
@@ -69,11 +70,11 @@ def doc_classif(graph_name,text_pickle_file,GREVIA_PATH,csv_file):
 	#G_doc = grevia.remove_weak_links(G_doc,threshold,weight='weight')
 	#G_doc.remove_nodes_from(nx.isolates(G_doc))
 	print('Nb of connected components: ',nx.number_connected_components(G_doc))
-	df = pd.read_pickle(text_pickle_file)
+	[data_dic,data_index] = read_file(text_pickle_file)
 	# Run the community detection
 	print('Running the community detection...')
 	subgraph_list = grevia.cluster_graph(G_doc,20)
 	grevia.clusters_info(subgraph_list)
-	cluster_name_list = grevia.subgraphs_to_filenames(subgraph_list,df,density=True)
+	cluster_name_list = grevia.subgraphs_to_filenames(subgraph_list,data_index,density=True)
 	clusters_table = grevia.output_filename_classification(cluster_name_list,csv_file)
 	print('Graph and classification done.')
