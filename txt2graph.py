@@ -75,6 +75,6 @@ def doc_classif(graph_name,text_pickle_file,csv_file):
 	print('Running the community detection...')
 	subgraph_list = grevia.cluster_graph(G_doc,20)
 	grevia.clusters_info(subgraph_list)
-	cluster_name_list = grevia.subgraphs_to_filenames(subgraph_list,data_index,density=True)
-	clusters_table = grevia.output_filename_classification(cluster_name_list,csv_file)
+	cluster_name_list = grevia.subgraphs_to_filenames_to_dic(subgraph_list,data_index,density=True)
+	clusters_table = grevia.output_filename_classification_from_dic(cluster_name_list,csv_file)
 	print('Graph and classification done.')
