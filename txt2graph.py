@@ -12,10 +12,27 @@ sys.path.append(grevia_path)
 import grevia
 
 def read_file(filename):
-	""" Read the pickle filename and return a dict of texts."""
+	""" Read the pickle filename and return a list with 2 elements:
+		the dict of texts and the document index.
+	"""
 	with open(filename, 'rb') as handle:
    		unserialized_data = pickle.load(handle)
 	return unserialized_data
+
+def get_document_and_text(data_dic,data_index,document_id):
+	""" return the document name and its text from its id and the output of read_file
+	"""
+	document_name = data_index[int(document_id)]
+	return document_name,data_dic[document_name]['text']
+
+def get_surrounding_text(doc_text,position,nb_words=10):
+	text_list = filter_text(doc_text)
+	start = max(0,position-nb_words)
+	if position+nb_words>len(doc_text)-1:
+		return " ".join(text_list[start:])
+	else:
+		return " ".join(text_list[start:position+nb_words])
+
 
 def filter_text(text):
 	""" filter the text: apply lower case and keep letters and numbers"""
@@ -55,6 +72,8 @@ def run(PICKLE_FILE,GRAPH_NAME,min_weight,max_iter):
 	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
 	# Save graph
 	nx.write_gpickle(GS,GRAPH_NAME)
+	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes()))
+	return output_message
 
 def doc_classif(graph_name,text_pickle_file,csv_file):
 	""" Classification of the documents from the graph,

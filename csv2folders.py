@@ -22,7 +22,7 @@ PDF_PATH = input_dic['pdf_folder']
 CSV_FILE = input_dic['csv_file']
 CLASSIF_PATH = input_dic['target_folder']
 
-# losding the CSV file into a dict of clusters
+# loading the CSV file into a dict of clusters
 cluster_dic ={}
 print('Loading: ',CSV_FILE)
 with open(CSV_FILE, 'r') as csvfile:
@@ -43,7 +43,7 @@ for key in cluster_dic.keys():
 	if not os.path.exists(c_path):
 			os.makedirs(c_path)
 	for file in cluster_dic[key]:
-		if '/' in file: # stop condition in the list (data other than filenames are stored after the string containing '/')
+		if '/' in file or file==' ': # stop condition in the list (data other than filenames are stored after the string containing '/')
 			break
 		if len(file)>0:
 			filename = os.path.join(PDF_PATH,file+'.pdf')

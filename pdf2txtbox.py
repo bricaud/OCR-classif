@@ -52,41 +52,41 @@ def pdf_to_png(pdf_file,short_name,png_path,page_limit=4):
 	proc_results = subprocess.run(cmd_pdf2png.split(), stdout=subprocess.PIPE,timeout=60)
 	return proc_results
 
-def pdf2txt(PDF_PATH):
+def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH):
 	""" Convert pdfs in the PDF_PATH to txt files"""
 	# Init
 	# initiate log file to report errors
-	LOG_FILE1 = 'logfile_pdf2png.txt'
-	LOG_FILE2 = 'logfile_png2txt.txt'
+	LOG_FILE1 = os.path.join(LOGS_PATH,'logfile_pdf2png.txt')
+	LOG_FILE2 = os.path.join(LOGS_PATH,'logfile_png2txt.txt')
+
 	with open(LOG_FILE1, 'a') as logfile:
 					logfile.write('Logfile produced by pdf2txt.py\n')  
 	with open(LOG_FILE2, 'a') as logfile:
 					logfile.write('Logfile produced by pdf2txt.py\n') 
 
-	# init paths
-	png_path = os.path.join(PDF_PATH,'png')
-	txt_path = os.path.join(PDF_PATH,'txt')
-	if not os.path.exists(png_path):
-		os.makedirs(png_path)
-	if not os.path.exists(txt_path):
-		os.makedirs(txt_path)   
 
 	# Loop over all the file in the pdf folder
-	nb_files = len(list(glob.glob(os.path.join(PDF_PATH,'*.pdf'))))		
+	nb_files = len(list(glob.glob(os.path.join(PDF_PATH,'*.pdf'))))
+	nb_errors = 0
+	nb_timeout = 0		
 	for idx,pdf_file in enumerate(glob.glob(os.path.join(PDF_PATH,'*.pdf'))):
 		pdf_path,filename = os.path.split(pdf_file)
 		print('processing {}. File {}/{}.'.format(filename,idx+1,nb_files))
 		short_name = filename[0:-4]
 		
 		try:
-			proc_results = pdf_to_png(pdf_file,short_name,png_path,page_limit=4)
+			proc_results = pdf_to_png(pdf_file,short_name,PNG_PATH,page_limit=4)
 			if proc_results.returncode:
 				print('Error encountered with file: {}\n'.format(filename))
+				nb_errors+=1
 				with open(LOG_FILE1, 'a') as logfile:
 					logfile.write('Error with file: {}\n'.format(filename))  # report errors
 			else:
-				png_to_txt(png_path,short_name,txt_path,LOG_FILE2)
+				png_to_txt(PNG_PATH,short_name,TXT_PATH,LOG_FILE2)
 		except subprocess.TimeoutExpired:
 			print('!!!!!! Timed out for file {} !!!!!!'.format(filename))
+			nb_timeout += 1
 			with open(LOG_FILE1, 'a') as logfile:
 					logfile.write('Timed out with file: {}\n'.format(filename))  # report time out
+	message = ' Total: {} files processed. Nb of errors : {} and Timeouts : {}.'.format(nb_files,nb_errors,nb_timeout)
+	return message

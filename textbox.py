@@ -62,7 +62,7 @@ def save(data,path):
 	with open(path, 'wb') as handle:
 		pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-def auto_extract(texts_path,pickle_file):
+def auto_extract(texts_path,pickle_file,log_path):
 	""" Automatically extract the texts from the text files in 'texts_path'
 		filter out the empty files
 		save the dict of data and index in the pickle file 'pickle_file' 
@@ -73,7 +73,7 @@ def auto_extract(texts_path,pickle_file):
 	print('Processing the text...')
 	data_dic,removed_files_list = remove_empty_files(data_dic,threshold=5)
 	# Write removed file to logfile
-	logfile = 'extract_log.csv'
+	logfile = os.path.join(log_path,'text_extraction_log.csv')
 	with open(logfile,'w') as log_f:
 		log_f.write('List of empty files (no text found).')
 		for item in removed_files_list:
