@@ -47,7 +47,7 @@ def run(PICKLE_FILE,GRAPH_NAME,min_weight,max_iter):
 	data_index = loaded_data[1]
 
 	# Construct the graph
-	print('Creating the graph...')
+	print('Creating the graph with threshold = {} ...'.format(min_weight))
 	GS = nx.DiGraph()
 	# initiate the progress bar
 	nb_of_texts = len(data_dic)
