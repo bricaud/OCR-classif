@@ -64,12 +64,14 @@ def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH):
 	with open(LOG_FILE2, 'a') as logfile:
 					logfile.write('Logfile produced by pdf2txt.py\n') 
 
-
+	print(PDF_PATH)
 	# Loop over all the file in the pdf folder
-	nb_files = len(list(glob.glob(os.path.join(PDF_PATH,'*.pdf'))))
+	pdf_files_list = list(glob.glob(os.path.join(PDF_PATH,'**/*.pdf'), recursive=True))
+	nb_files = len(pdf_files_list)
+	print(pdf_files_list)
 	nb_errors = 0
 	nb_timeout = 0		
-	for idx,pdf_file in enumerate(glob.glob(os.path.join(PDF_PATH,'*.pdf'))):
+	for idx,pdf_file in enumerate(pdf_files_list):
 		pdf_path,filename = os.path.split(pdf_file)
 		print('processing {}. File {}/{}.'.format(filename,idx+1,nb_files))
 		short_name = filename[0:-4]
