@@ -75,10 +75,12 @@ def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH,EX_TXT_PICKLE):
 	file_data = {} # info on files	
 	for idx,pdf_file in enumerate(pdf_files_list):
 		pdf_path,filename = os.path.split(pdf_file)
+		# keeping the relative path
+		rel_path =os.path.relpath(pdf_path,PDF_PATH)
 		print('processing {}. File {}/{}.'.format(filename,idx+1,nb_files))
 		short_name = filename[0:-4]
 		file_data[short_name] = {}
-		file_data[short_name]['path'] = pdf_path
+		file_data[short_name]['path'] = rel_path
 		file_data[short_name]['error'] = 0
 		try:
 			proc_results = pdf_to_png(pdf_file,short_name,PNG_PATH,page_limit=4)

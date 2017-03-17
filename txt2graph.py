@@ -7,6 +7,7 @@ import re
 import networkx as nx
 import tqdm
 import pickle
+import os
 grevia_path = '../grevia'
 sys.path.append(grevia_path)
 import grevia
@@ -40,13 +41,11 @@ def filter_text(text):
 	filtered_text = re.findall('\w+', str(text), re.UNICODE)
 	return filtered_text
 
-def run(TXT_PICKLE,EX_TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
+def run(TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
 	""" Create the graph from the dataframe of texts."""
 	loaded_data = read_file(TXT_PICKLE)
 	data_dic = loaded_data[0]
 	data_index = loaded_data[1]
-	# info from the file extraction
-	file_info = read_file(EX_TXT_PICKLE)
 
 	# Construct the graph
 	print('Creating the graph with threshold = {} ...'.format(min_weight))
@@ -77,10 +76,13 @@ def run(TXT_PICKLE,EX_TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
 	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes()))
 	return output_message
 
-def doc_classif(graph_name,text_pickle_file,csv_file):
+def doc_classif(graph_name,text_pickle_file,EX_TXT_PICKLE,csv_file):
 	""" Classification of the documents from the graph,
 	using community detection.
 	"""
+	if not os.path.isfile(EX_TXT_PICKLE):
+		print('No file with info on extracted text. Please extract the text first with pdf2txt. ')
+		return 'No file with info on extracted text. Please extract the text first with pdf2txt. '
 	G = nx.read_gpickle(graph_name)
 	G_doc = grevia.doc_graph(G)
 	print('Graph of documents created.')
@@ -92,10 +94,13 @@ def doc_classif(graph_name,text_pickle_file,csv_file):
 	#G_doc.remove_nodes_from(nx.isolates(G_doc))
 	print('Nb of connected components: ',nx.number_connected_components(G_doc))
 	[data_dic,data_index] = read_file(text_pickle_file)
+
+	# Get info from the pdf initial files
+	file_infos = read_file(EX_TXT_PICKLE)
 	# Run the community detection
 	print('Running the community detection...')
 	subgraph_list = grevia.cluster_graph(G_doc,20)
 	grevia.clusters_info(subgraph_list)
-	cluster_name_list = grevia.subgraphs_to_filenames_to_dic(subgraph_list,data_index,density=True)
+	cluster_name_list = grevia.subgraphs_to_filenames_to_dic(subgraph_list,data_index,file_infos,density=True)
 	clusters_table = grevia.output_filename_classification_from_dic(cluster_name_list,csv_file)
 	print('Graph and classification done.')
