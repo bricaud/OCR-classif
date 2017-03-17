@@ -80,9 +80,6 @@ def doc_classif(graph_name,text_pickle_file,EX_TXT_PICKLE,csv_file):
 	""" Classification of the documents from the graph,
 	using community detection.
 	"""
-	if not os.path.isfile(EX_TXT_PICKLE):
-		print('No file with info on extracted text. Please extract the text first with pdf2txt. ')
-		return 'No file with info on extracted text. Please extract the text first with pdf2txt. '
 	G = nx.read_gpickle(graph_name)
 	G_doc = grevia.doc_graph(G)
 	print('Graph of documents created.')

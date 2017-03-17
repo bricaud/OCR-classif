@@ -27,6 +27,10 @@ def png_to_txt(pngpath,short_name,txtpath,log_file,file_data):
 		path,filename = os.path.split(pngfile)
 		txtfile = filename[0:-4] #+'.txt'
 		txt_out = os.path.join(txtpath,txtfile)
+		# Check if the file has already been processed
+		if os.path.isfile(txt_out+'.txt'):
+			print('Text file {} exists. Skipping the extraction.'.format(txt_out))
+			continue
 		try:
 			cmd_png2txt = (['tesseract', pngfile, 
 				txt_out, '-l fra+eng'])
@@ -44,6 +48,11 @@ def pdf_to_png(pdf_file,short_name,png_path,page_limit=4):
 	""" Convert the pdf to png, each page of the pdf gives a different png file."""
 	out_name = short_name+'.%d.png'
 	out_file = os.path.join(png_path,out_name)
+	#Check if the file has already been processed
+	out_file1 =os.path.join(png_path,short_name+'.1.png')
+	if os.path.isfile(out_file1):
+		print(' {} already computed'.format(out_file1))
+		return 0
 	inputstr = pdf_file
 	outputstr = '-sOutputFile=' +out_file
 	cmd_pdf2png = (["gs","-dSAFER","-dNOPAUSE", "-q", "-r300x300", "-sDEVICE=pnggray", "-dBATCH",
@@ -51,7 +60,7 @@ def pdf_to_png(pdf_file,short_name,png_path,page_limit=4):
 		outputstr.encode('unicode-escape'),
 		inputstr.encode('unicode-escape')])
 	proc_results = subprocess.run(cmd_pdf2png, stdout=subprocess.PIPE,timeout=60)
-	return proc_results
+	return proc_results.returncode
 
 def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH,EX_TXT_PICKLE):
 	""" Convert pdfs in the PDF_PATH to txt files"""
@@ -84,7 +93,7 @@ def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH,EX_TXT_PICKLE):
 		file_data[short_name]['error'] = 0
 		try:
 			proc_results = pdf_to_png(pdf_file,short_name,PNG_PATH,page_limit=4)
-			if proc_results.returncode:
+			if proc_results:
 				report_and_log(short_name,LOG_FILE1,file_data,'error')
 				nb_errors+=1
 			else:
