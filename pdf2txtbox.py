@@ -68,7 +68,7 @@ def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH):
 	# Loop over all the file in the pdf folder
 	pdf_files_list = list(glob.glob(os.path.join(PDF_PATH,'**/*.pdf'), recursive=True))
 	nb_files = len(pdf_files_list)
-	print(pdf_files_list)
+	print('{} pdf files found in directory {} and subdirectories.'.format(nb_files,PDF_PATH))
 	nb_errors = 0
 	nb_timeout = 0		
 	for idx,pdf_file in enumerate(pdf_files_list):
