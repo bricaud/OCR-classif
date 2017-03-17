@@ -8,10 +8,10 @@
 import os
 import subprocess
 import glob
-import platform
+import pickle
 
 
-def png_to_txt(pngpath,short_name,txtpath,log_file):
+def png_to_txt(pngpath,short_name,txtpath,log_file,file_data):
 	""" Extract the text from a set of png files.
 
 	The png files associated to a single pdf file are numbered according to the page,
@@ -19,40 +19,41 @@ def png_to_txt(pngpath,short_name,txtpath,log_file):
 
 	"""
 	png_in = os.path.join(pngpath,short_name)
-	# Iterate over the pages of the document (different png files)
-	for pngfile in glob.glob(png_in+'*'):
+	# Each page of the document is a different png file
+	list_of_pages = glob.glob(png_in+'*')
+	file_data[short_name]['nb_pages'] = len(list_of_pages)
+	# Extract the text in all the pages
+	for pngfile in list_of_pages:
 		path,filename = os.path.split(pngfile)
 		txtfile = filename[0:-4] #+'.txt'
 		txt_out = os.path.join(txtpath,txtfile)
 		try:
-			cmd_png2txt = 'tesseract '+ pngfile +' '+txt_out+ ' -l fra+eng'
-			proc_results = subprocess.run(cmd_png2txt.split(), stdout=subprocess.PIPE,timeout=60)
+			cmd_png2txt = (['tesseract', pngfile, 
+				txt_out, '-l fra+eng'])
+			proc_results = subprocess.run(cmd_png2txt, stdout=subprocess.PIPE,timeout=60)
 			if proc_results.returncode:
-				print('Error encountered with file: {}\n'.format(filename))
-				with open(log_file, 'a') as logfile:
-					logfile.write('Error with file: {}\n'.format(filename))  # report errors
+				report_and_log(short_name,log_file,file_data,'pngerror')
 			else:
 				print('Text extracted form file: {}'.format(filename))
 		except:
-			print('error extracting text with file {}'.format(filename))
-			with open(log_file, 'a') as logfile:
-				logfile.write('Error with file (exception raised): {}\n'.format(filename))  # report errors
-
+			report_and_log(short_name,log_file,file_data,'pngexcepterror')
+	return file_data
 
 def pdf_to_png(pdf_file,short_name,png_path,page_limit=4):
+	import re
 	""" Convert the pdf to png, each page of the pdf gives a different png file."""
 	out_name = short_name+'.%d.png'
 	out_file = os.path.join(png_path,out_name)
-	if platform.system() == 'Windows':
-		cmd_pdf2png = ('gswin64c -dSAFER -dNOPAUSE -q -r300x300 -sDEVICE=pnggray -dBATCH -dLastPage=' + str(page_limit) + 
-		' -sOutputFile=' + out_file + ' ' + pdf_file)
-	else:
-		cmd_pdf2png = ('gs -dSAFER -dNOPAUSE -q -r300x300 -sDEVICE=pnggray -dBATCH -dLastPage=' + str(page_limit) + 
-		' -sOutputFile=' + out_file + ' ' + pdf_file)
-	proc_results = subprocess.run(cmd_pdf2png.split(), stdout=subprocess.PIPE,timeout=60)
+	inputstr = pdf_file
+	outputstr = '-sOutputFile=' +out_file
+	cmd_pdf2png = (["gs","-dSAFER","-dNOPAUSE", "-q", "-r300x300", "-sDEVICE=pnggray", "-dBATCH",
+		"-dLastPage=" + str(page_limit), 
+		outputstr.encode('unicode-escape'),
+		inputstr.encode('unicode-escape')])
+	proc_results = subprocess.run(cmd_pdf2png, stdout=subprocess.PIPE,timeout=60)
 	return proc_results
 
-def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH):
+def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH,EX_TXT_PICKLE):
 	""" Convert pdfs in the PDF_PATH to txt files"""
 	# Init
 	# initiate log file to report errors
@@ -64,31 +65,62 @@ def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH):
 	with open(LOG_FILE2, 'a') as logfile:
 					logfile.write('Logfile produced by pdf2txt.py\n') 
 
-	print(PDF_PATH)
-	# Loop over all the file in the pdf folder
+	# Loop over all the files in the PDF_PATH folder and subfolders
+	print('Listing all the pdf files...')
 	pdf_files_list = list(glob.glob(os.path.join(PDF_PATH,'**/*.pdf'), recursive=True))
 	nb_files = len(pdf_files_list)
-	print('{} pdf files found in directory {} and subdirectories.'.format(nb_files,PDF_PATH))
+	print('{} pdf files found in the given directory and subdirectories.'.format(nb_files))
 	nb_errors = 0
-	nb_timeout = 0		
+	nb_timeout = 0
+	file_data = {} # info on files	
 	for idx,pdf_file in enumerate(pdf_files_list):
 		pdf_path,filename = os.path.split(pdf_file)
 		print('processing {}. File {}/{}.'.format(filename,idx+1,nb_files))
 		short_name = filename[0:-4]
-		
+		file_data[short_name] = {}
+		file_data[short_name]['path'] = pdf_path
+		file_data[short_name]['error'] = 0
 		try:
 			proc_results = pdf_to_png(pdf_file,short_name,PNG_PATH,page_limit=4)
 			if proc_results.returncode:
-				print('Error encountered with file: {}\n'.format(filename))
+				report_and_log(short_name,LOG_FILE1,file_data,'error')
 				nb_errors+=1
-				with open(LOG_FILE1, 'a') as logfile:
-					logfile.write('Error with file: {}\n'.format(filename))  # report errors
 			else:
-				png_to_txt(PNG_PATH,short_name,TXT_PATH,LOG_FILE2)
+				file_data = png_to_txt(PNG_PATH,short_name,TXT_PATH,LOG_FILE2,file_data)
 		except subprocess.TimeoutExpired:
-			print('!!!!!! Timed out for file {} !!!!!!'.format(filename))
+			report_and_log(short_name,LOG_FILE1,file_data,'timeout')
 			nb_timeout += 1
-			with open(LOG_FILE1, 'a') as logfile:
-					logfile.write('Timed out with file: {}\n'.format(filename))  # report time out
+	# Save infos on files in a pickle file
+	save(file_data,EX_TXT_PICKLE)
 	message = ' Total: {} files processed. Nb of errors : {} and Timeouts : {}.'.format(nb_files,nb_errors,nb_timeout)
 	return message
+
+def save(data,path):
+	with open(path, 'wb') as handle:
+		pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def report_and_log(filename,log_file,file_data,error_code):
+	if error_code is 'timeout': # report time out
+		print('!!!!!! Timed out for file {} !!!!!!'.format(filename))
+		file_data[filename]['error'] = 1
+		with open(log_file, 'a') as logfile:
+			logfile.write('Timed out with file: {}\n'.format(filename))
+
+	elif error_code is 'pngerror': # report png errors
+		print('Error encountered with file: {}\n'.format(filename))
+		file_data[filename]['error'] = 2
+		with open(log_file, 'a') as logfile:
+			logfile.write('Error with png file : {}\n'.format(filename)) 
+
+	elif error_code is 'pngexcepterror': # report exception errors
+		print('Error encountered with png file: {}\n'.format(filename))
+		file_data[filename]['error'] = 3
+		with open(log_file, 'a') as logfile:
+			logfile.write('Error with file (exception raised): {}\n'.format(filename))
+
+	else: # report other errors
+		print('Error encountered with file: {}\n'.format(filename))
+		file_data[filename]['error'] = 4
+		with open(log_file, 'a') as logfile:
+			logfile.write('Error with file: {}\n'.format(filename)) 

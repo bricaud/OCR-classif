@@ -40,11 +40,13 @@ def filter_text(text):
 	filtered_text = re.findall('\w+', str(text), re.UNICODE)
 	return filtered_text
 
-def run(PICKLE_FILE,GRAPH_NAME,min_weight,max_iter):
+def run(TXT_PICKLE,EX_TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
 	""" Create the graph from the dataframe of texts."""
-	loaded_data = read_file(PICKLE_FILE)
+	loaded_data = read_file(TXT_PICKLE)
 	data_dic = loaded_data[0]
 	data_index = loaded_data[1]
+	# info from the file extraction
+	file_info = read_file(EX_TXT_PICKLE)
 
 	# Construct the graph
 	print('Creating the graph with threshold = {} ...'.format(min_weight))
