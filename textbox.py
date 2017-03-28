@@ -4,6 +4,17 @@ import glob
 import pickle
 
 
+def remove_extensions(text_file):
+	""" Remove the extensions on 'file.nb.txt' and return 'file'."""
+	without_txt_extension,ext = os.path.splitext(text_file)
+	without_nb_extension,ext = os.path.splitext(without_txt_extension)
+	return without_nb_extension
+
+def find_nb_of_pages(txt_short_filename):
+	files_pages = txt_short_filename + '.*.txt'
+	print(files_pages)
+	return len(glob.glob(files_pages))
+
 def extract_text(path):
 	""" Extract the text of all txt files in the path,
 		and store it in a dictionary.
@@ -15,27 +26,22 @@ def extract_text(path):
 	files_to_search = os.path.join(path,'*.txt')
 	data_dic = {}# key:filename',value:'text'
 	data_index = {}
+	# Assuming the file to be made of one digit page number appended to the name like this: file.1.txt:
+	set_of_text_files = set([remove_extensions(item) for item in glob.glob(files_to_search)])
+	nb_of_texts = len(set_of_text_files)
 	# progress bar to display
-	nb_of_texts = len([item for item in glob.glob(files_to_search)])
 	pbar = tqdm(total=nb_of_texts)
-	for idx,file in enumerate(glob.glob(files_to_search)):
+	for idx,file in enumerate(set_of_text_files):
 		pbar.update(1)
-		path,txtfile = os.path.split(file)
-		fname = txtfile[0:-6] # this assumes a one digit page number appended to the name like this: file.1.txt
-		#print(txtfile)
-		#print(file)
-		with open(file,'r', encoding='utf-8', errors='replace') as text_file:
-			try:
-				text_block = text_file.read()
-			except:
-				raise ValueError('Failed to read {}'.format(file))
-		if fname in data_dic.keys():
-			data_dic[fname]['text'] = data_dic[fname]['text'] + ' ' + text_block
-		else:
-			data_dic[fname] = {}
-			data_dic[fname]['text'] = text_block
-			data_dic[fname]['id'] = idx
-			data_index[idx] = fname
+		nb_of_pages = find_nb_of_pages(file)
+		full_text,error_code = singlepdf_extract_text(file,nb_of_pages)
+		
+		path,fname = os.path.split(file)
+		data_dic[fname] = {}
+		data_dic[fname]['text'] = full_text
+		data_dic[fname]['error'] = error_code
+		data_dic[fname]['id'] = idx
+		data_index[idx] = fname
 	pbar.close()
 	return data_dic,data_index
 
@@ -82,3 +88,40 @@ def auto_extract(texts_path,pickle_file,log_path):
 	print('Saving to file {}'.format(pickle_file))
 	save([data_dic,data_index],pickle_file)
 	print('Saving done.')
+
+################################################
+### New version using database
+
+def singlepdf_extract_text(txt_short_filename,nb_of_pages):
+	""" Extract the text of all txt files (one per page) associated to a pdf file,
+		and return a string containing the text. It also return an error code (0 if no error in the process).
+
+		>> full_text,error_code = singlepdf_extract_text(txt_short_filename,nb_of_pages)
+
+	"""
+	full_text = ''
+	error_code = 0	
+	for idx in range(nb_of_pages):
+		# name of the text file for each page
+		page_nb = idx+1
+		file = txt_short_filename + '.' + str(page_nb) + '.' + 'txt'
+		with open(file,'r', encoding='utf-8', errors='replace') as text_file:
+			try:
+				text_block = text_file.read()
+			except:
+				error_code = 1
+				text_block = ''
+				raise ValueError('Failed to read {}'.format(file))
+		full_text = full_text + ' ' + text_block
+	return full_text,error_code
+
+def flag_empty_text(text,min_nb_of_chars=5):
+	""" detect the empty text
+		An empty file is a file where the number of chars is
+		below the threshold (default=5).
+		return a boolean
+	"""
+	empty = False
+	if len(text)<min_nb_of_chars:
+		empty = True
+	return empty

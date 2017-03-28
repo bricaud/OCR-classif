@@ -11,8 +11,8 @@ import glob
 import pickle
 
 
-def png_to_txt(pngpath,short_name,txtpath,log_file,file_data):
-	""" Extract the text from a set of png files.
+def png_to_txt(pngpath,short_name,txtpath,file_data):
+	""" Extract the text from a set of png files (issued from the same pdf file).
 
 	The png files associated to a single pdf file are numbered according to the page,
 	they share the same short_name.
@@ -21,7 +21,8 @@ def png_to_txt(pngpath,short_name,txtpath,log_file,file_data):
 	png_in = os.path.join(pngpath,short_name)
 	# Each page of the document is a different png file
 	list_of_pages = glob.glob(png_in+'*')
-	file_data[short_name]['nb_pages'] = len(list_of_pages)
+	file_data['nb_pages'] = len(list_of_pages)
+	file_data['txtpath'] = txtpath
 	# Extract the text in all the pages
 	for pngfile in list_of_pages:
 		path,filename = os.path.split(pngfile)
@@ -35,12 +36,16 @@ def png_to_txt(pngpath,short_name,txtpath,log_file,file_data):
 			cmd_png2txt = (['tesseract', pngfile, 
 				txt_out, '-l fra+eng'])
 			proc_results = subprocess.run(cmd_png2txt, stdout=subprocess.PIPE,timeout=60)
+			file_data['txt_file'] = txt_out+'.txt'
 			if proc_results.returncode:
-				report_and_log(short_name,log_file,file_data,'pngerror')
+				print('Error encountered with file: {}\n'.format(filename))
+				file_data['error'] = 3
 			else:
 				print('Text extracted form file: {}'.format(filename))
 		except:
-			report_and_log(short_name,log_file,file_data,'pngexcepterror')
+			print('Error encountered with png file (exception raised): {}\n'.format(filename))
+			file_data['error'] = 4
+
 	return file_data
 
 def pdf_to_png(pdf_file,short_name,png_path,page_limit=4):
@@ -81,28 +86,23 @@ def pdf2txt(PDF_PATH,PNG_PATH,TXT_PATH,LOGS_PATH,EX_TXT_PICKLE):
 	print('{} pdf files found in the given directory and subdirectories.'.format(nb_files))
 	nb_errors = 0
 	nb_timeout = 0
-	file_data = {} # info on files	
+	file_data_full = {} # info on files	
 	for idx,pdf_file in enumerate(pdf_files_list):
-		pdf_path,filename = os.path.split(pdf_file)
+
+		full_path,filename = os.path.split(pdf_file)
 		# keeping the relative path
-		rel_path =os.path.relpath(pdf_path,PDF_PATH)
+		rel_path =os.path.relpath(full_path,PDF_PATH)
 		print('processing {}. File {}/{}.'.format(filename,idx+1,nb_files))
-		short_name = filename[0:-4]
-		file_data[short_name] = {}
-		file_data[short_name]['path'] = rel_path
-		file_data[short_name]['error'] = 0
-		try:
-			proc_results = pdf_to_png(pdf_file,short_name,PNG_PATH,page_limit=4)
-			if proc_results:
-				report_and_log(short_name,LOG_FILE1,file_data,'error')
-				nb_errors+=1
-			else:
-				file_data = png_to_txt(PNG_PATH,short_name,TXT_PATH,LOG_FILE2,file_data)
-		except subprocess.TimeoutExpired:
-			report_and_log(short_name,LOG_FILE1,file_data,'timeout')
+		file_data, message = singlefile_pdf2txt(filename,rel_path,full_path,PNG_PATH,TXT_PATH)
+
+		if file_data['error'] == 2:
 			nb_timeout += 1
+		if file_data['error'] == 2:
+			nb_errors+=1
+		report_and_log(filename,LOG_FILE1,LOG_FILE2,file_data['error'])
+		file_data_full[filename[:-4]] = file_data
 	# Save infos on files in a pickle file
-	save(file_data,EX_TXT_PICKLE)
+	save(file_data_full,EX_TXT_PICKLE)
 	message = ' Total: {} files processed. Nb of errors : {} and Timeouts : {}.'.format(nb_files,nb_errors,nb_timeout)
 	return message
 
@@ -111,27 +111,51 @@ def save(data,path):
 		pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def report_and_log(filename,log_file,file_data,error_code):
-	if error_code is 'timeout': # report time out
+def report_and_log(filename,log_file_pdf2png,log_file_png2txt,error_code):
+	if error_code==2: # report time out
 		print('!!!!!! Timed out for file {} !!!!!!'.format(filename))
-		file_data[filename]['error'] = 1
-		with open(log_file, 'a') as logfile:
+		with open(log_file_pdf2png, 'a') as logfile:
 			logfile.write('Timed out with file: {}\n'.format(filename))
 
-	elif error_code is 'pngerror': # report png errors
+	elif error_code==3: # report png errors
 		print('Error encountered with file: {}\n'.format(filename))
-		file_data[filename]['error'] = 2
-		with open(log_file, 'a') as logfile:
+		with open(log_file_png2txt, 'a') as logfile:
 			logfile.write('Error with png file : {}\n'.format(filename)) 
 
-	elif error_code is 'pngexcepterror': # report exception errors
+	elif error_code==4: # report exception errors
 		print('Error encountered with png file: {}\n'.format(filename))
-		file_data[filename]['error'] = 3
-		with open(log_file, 'a') as logfile:
+		with open(log_file_png2txt, 'a') as logfile:
 			logfile.write('Error with file (exception raised): {}\n'.format(filename))
 
-	else: # report other errors
+	elif error_code==1: # report other errors
 		print('Error encountered with file: {}\n'.format(filename))
-		file_data[filename]['error'] = 4
-		with open(log_file, 'a') as logfile:
+		with open(log_file_pdf2png, 'a') as logfile:
 			logfile.write('Error with file: {}\n'.format(filename)) 
+
+
+def singlefile_pdf2txt(filename,rel_path,full_path,PNG_PATH,TXT_PATH):
+	""" Convert a pdf PDF_FILE to a txt file"""
+	# Init
+	error = 0
+	file_data = {} # info on file	
+	(short_name,ext) = os.path.splitext(filename)
+	file_data['name'] = short_name
+	file_data['path'] = rel_path
+	file_data['error'] = 0
+	pdf_file = os.path.join(full_path,filename)
+	print(pdf_file)
+	try:
+		proc_results = pdf_to_png(pdf_file,short_name,PNG_PATH,page_limit=4)
+		if proc_results:
+			file_data['error'] = 1
+		else:
+			file_data['pngpath'] = PNG_PATH
+			file_data = png_to_txt(PNG_PATH,short_name,TXT_PATH,file_data)
+	except subprocess.TimeoutExpired:
+		file_data['error'] = 2
+	# console output
+	errorMessage = ''
+	if 	file_data['error']:
+		errorMessage = 'Error occurred.'
+	message = ' {} processed.'.format(short_name) + errorMessage
+	return file_data,message
