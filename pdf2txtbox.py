@@ -20,7 +20,7 @@ def png_to_txt(pngpath,short_name,txtpath,file_data):
 	"""
 	png_in = os.path.join(pngpath,short_name)
 	# Each page of the document is a different png file
-	list_of_pages = glob.glob(png_in+'*')
+	list_of_pages = glob.glob(png_in+'.*.png')
 	file_data['nb_pages'] = len(list_of_pages)
 	file_data['txtpath'] = txtpath
 	# Extract the text in all the pages
