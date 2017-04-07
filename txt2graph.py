@@ -2,12 +2,12 @@
 """ Module to create the graph from the texts in pickle file (dataframe),
 and to classify the documents from the graph.
 """
-import sys
+
 import re
 import networkx as nx
 import tqdm
 import pickle
-import os
+import sys
 grevia_path = '../grevia'
 sys.path.append(grevia_path)
 import grevia
