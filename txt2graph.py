@@ -4,7 +4,6 @@ and to classify the documents from the graph.
 """
 
 import re
-import networkx as nx
 import tqdm
 import pickle
 import sys
@@ -47,16 +46,16 @@ def filter_text(text):
 	text = text.lower()
 	filtered_text = re.findall('\w+', str(text), re.UNICODE)
 	return filtered_text
-
+"""
 def run(TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
-	""" Create the graph from the dataframe of texts."""
+	"" Create the graph from the dataframe of texts.""
 	loaded_data = read_file(TXT_PICKLE)
 	data_dic = loaded_data[0]
 	data_index = loaded_data[1]
 
 	# Construct the graph
 	print('Creating the graph with threshold = {} ...'.format(min_weight))
-	GS = nx.DiGraph()
+	GS = grevia.WordGraph()
 	# initiate the progress bar
 	nb_of_texts = len(data_dic)
 	pbar = tqdm.tqdm(total=nb_of_texts)
@@ -64,9 +63,10 @@ def run(TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
 		data_elem = data_dic[key]
 		text_id = data_elem['id']
 		list_of_words = filter_text(data_elem['text'])
-		text_data = {}
-		text_data['length'] = len(list_of_words)
-		GS = grevia.add_string_of_words(GS,list_of_words,text_id,text_data)
+		#text_data = {}
+		#text_data['length'] = len(list_of_words)
+		document = grevia.Document(text_id,list_of_words)
+		GS = grevia.add_document(GS,document)
 		pbar.update(1)
 	pbar.close()
 	print('Graph created.')
@@ -82,14 +82,14 @@ def run(TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
 	nx.write_gpickle(GS,GRAPH_NAME)
 	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes()))
 	return output_message
-
+"""
 def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
 	""" Create the graph from the dataframe of texts."""
 
 	data_dic = db_entries_dic
 	# Construct the graph
 	print('Creating the graph with threshold = {} ...'.format(min_weight))
-	GS = nx.DiGraph()
+	GS = grevia.WordGraph()
 	# initiate the progress bar
 	nb_of_texts = len(data_dic)
 	pbar = tqdm.tqdm(total=nb_of_texts)
@@ -97,9 +97,10 @@ def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
 		data_elem = data_dic[key]
 		text_id = data_elem['id']
 		list_of_words = filter_text(data_elem['text'])
-		text_data = {}
-		text_data['length'] = len(list_of_words)
-		GS = grevia.add_string_of_words(GS,list_of_words,text_id,text_data)
+		#text_data = {}
+		#text_data['length'] = len(list_of_words)
+		document = grevia.Document(text_id,list_of_words)
+		GS = grevia.add_document(GS,document)
 		pbar.update(1)
 	pbar.close()
 	print('Graph created.')
@@ -112,15 +113,16 @@ def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
 	# Normalize the weights and cut the weakest links 
 	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
 	# Save graph
-	nx.write_gpickle(GS,GRAPH_NAME)
+	#nx.write_gpickle(GS,GRAPH_NAME)
+	GS.save_to_file(GRAPH_NAME)
 	node_dic = grevia.node_dic_from_graph(GS)
 	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes()))
 	return node_dic,output_message
-
+"""
 def doc_classif(graph_name,text_pickle_file,EX_TXT_PICKLE,csv_file):
-	""" Classification of the documents from the graph,
+	"" Classification of the documents from the graph,
 	using community detection.
-	"""
+	""
 	G = nx.read_gpickle(graph_name)
 	G_doc = grevia.doc_graph(G)
 	print('Graph of documents created.')
@@ -143,12 +145,13 @@ def doc_classif(graph_name,text_pickle_file,EX_TXT_PICKLE,csv_file):
 	clusters_table = grevia.output_filename_classification_from_dic(cluster_name_list,csv_file)
 	print('Graph and classification done.')
 
-
+"""
 def doc_classif_db(graph_name,document_index_dic,csv_file):
 	""" Classification of the documents from the graph,
 	using community detection.
 	"""
-	G = nx.read_gpickle(graph_name)
+	#G = nx.read_gpickle(graph_name)
+	G = grevia.WordGraph.load_from_file(graph_name)
 	G_doc = grevia.doc_graph(G)
 	print('Graph of documents created.')
 	print('Nb of edges: {}, nb of nodes: {}'.format(G_doc.size(),len(G_doc.nodes())))
@@ -157,7 +160,7 @@ def doc_classif_db(graph_name,document_index_dic,csv_file):
 	#threshold = 5
 	#G_doc = grevia.remove_weak_links(G_doc,threshold,weight='weight')
 	#G_doc.remove_nodes_from(nx.isolates(G_doc))
-	print('Nb of connected components: ',nx.number_connected_components(G_doc))
+	print('Nb of connected components: ',G_doc.number_connected_components())
 	# Run the community detection
 	print('Running the community detection...')
 	subgraph_list = grevia.cluster_graph(G_doc,20)
