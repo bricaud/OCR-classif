@@ -89,7 +89,7 @@ def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
 	data_dic = db_entries_dic
 	# Construct the graph
 	print('Creating the graph with threshold = {} ...'.format(min_weight))
-	GS = grevia.WordGraph()
+	GS = grevia.wordgraph.Graph()
 	# initiate the progress bar
 	nb_of_texts = len(data_dic)
 	pbar = tqdm.tqdm(total=nb_of_texts)
@@ -151,19 +151,19 @@ def doc_classif_db(graph_name,document_index_dic,csv_file):
 	using community detection.
 	"""
 	#G = nx.read_gpickle(graph_name)
-	G = grevia.WordGraph.load_from_file(graph_name)
-	G_doc = grevia.doc_graph(G)
+	wordG = grevia.wordgraph.Graph.load_from_file(graph_name)
+	docG = grevia.make_document_graph(wordG)
 	print('Graph of documents created.')
-	print('Nb of edges: {}, nb of nodes: {}'.format(G_doc.size(),len(G_doc.nodes())))
+	print('Nb of edges: {}, nb of nodes: {}'.format(docG.size(),len(docG.nodes())))
 	# Shrink the graph
 	#print('Removing weakest links...')
 	#threshold = 5
 	#G_doc = grevia.remove_weak_links(G_doc,threshold,weight='weight')
 	#G_doc.remove_nodes_from(nx.isolates(G_doc))
-	print('Nb of connected components: ',G_doc.number_connected_components())
+	print('Nb of connected components: ',docG.number_connected_components())
 	# Run the community detection
 	print('Running the community detection...')
-	subgraph_list = grevia.cluster_graph(G_doc,20)
+	subgraph_list = grevia.cluster_graph(docG,20)
 	grevia.clusters_info(subgraph_list)
 	# Attach the documents infos
 	clusters_dic = grevia.subgraphs_to_filenames_to_dic_db(subgraph_list,document_index_dic,density=True)
