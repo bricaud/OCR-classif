@@ -168,6 +168,6 @@ def doc_classif_db(graph_name,document_index_dic,csv_file):
 	# Attach the documents infos
 	clusters_dic = grevia.subgraphs_to_filenames_to_dic_db(subgraph_list,document_index_dic,density=True)
 	# Save the data
-	grevia.output_filename_classification_from_dic_db(clusters_dic,csv_file)
+	grevia.save_classification_from_dic_to_file(clusters_dic,csv_file)
 	print('Graph and classification done.')
 	return clusters_dic
