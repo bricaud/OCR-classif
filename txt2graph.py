@@ -70,17 +70,17 @@ def run(TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
 		pbar.update(1)
 	pbar.close()
 	print('Graph created.')
-	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes())))
+	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
 
 	# Merge the strongly connected nodes
 	GS = grevia.merge_strongly_connected_nodes_fast(GS,min_weight,max_iter)
 	print('New graph size:')
-	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes())))
+	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
 	# Normalize the weights and cut the weakest links 
 	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
 	# Save graph
 	nx.write_gpickle(GS,GRAPH_NAME)
-	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes()))
+	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes())
 	return output_message
 """
 def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
@@ -99,24 +99,25 @@ def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
 		list_of_words = filter_text(data_elem['text'])
 		#text_data = {}
 		#text_data['length'] = len(list_of_words)
-		document = grevia.Document(text_id,list_of_words)
-		GS = grevia.add_document(GS,document)
+		document = grevia.Document(text_id,list_of_words,key)
+		#GS = grevia.add_document(GS,document)
+		GS = grevia.add_merge_document(GS,document)
 		pbar.update(1)
 	pbar.close()
 	print('Graph created.')
-	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes())))
+	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
 
 	# Merge the strongly connected nodes
 	GS = grevia.merge_strongly_connected_nodes_fast(GS,min_weight,max_iter)
 	print('New graph size:')
-	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes())))
+	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
 	# Normalize the weights and cut the weakest links 
 	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
 	# Save graph
 	#nx.write_gpickle(GS,GRAPH_NAME)
 	GS.save_to_file(GRAPH_NAME)
 	node_dic = grevia.node_dic_from_graph(GS)
-	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.size(),len(GS.nodes()))
+	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes())
 	return node_dic,output_message
 """
 def doc_classif(graph_name,text_pickle_file,EX_TXT_PICKLE,csv_file):
@@ -126,7 +127,7 @@ def doc_classif(graph_name,text_pickle_file,EX_TXT_PICKLE,csv_file):
 	G = nx.read_gpickle(graph_name)
 	G_doc = grevia.doc_graph(G)
 	print('Graph of documents created.')
-	print('Nb of edges: {}, nb of nodes: {}'.format(G_doc.size(),len(G_doc.nodes())))
+	print('Nb of edges: {}, nb of nodes: {}'.format(G_doc.number_of_edges(),G_doc.number_of_nodes()))
 	# Shrink the graph
 	#print('Removing weakest links...')
 	#threshold = 5
@@ -154,7 +155,7 @@ def doc_classif_db(graph_name,document_index_dic,csv_file):
 	wordG = grevia.wordgraph.Graph.load_from_file(graph_name)
 	docG = grevia.make_document_graph(wordG)
 	print('Graph of documents created.')
-	print('Nb of edges: {}, nb of nodes: {}'.format(docG.size(),len(docG.nodes())))
+	print('Nb of edges: {}, nb of nodes: {}'.format(docG.number_of_edges(),docG.number_of_nodes()))
 	# Shrink the graph
 	#print('Removing weakest links...')
 	#threshold = 5
@@ -166,7 +167,7 @@ def doc_classif_db(graph_name,document_index_dic,csv_file):
 	subgraph_list = grevia.cluster_graph(docG,20)
 	grevia.clusters_info(subgraph_list)
 	# Attach the documents infos
-	clusters_dic = grevia.subgraphs_to_filenames_to_dic_db(subgraph_list,document_index_dic,density=True)
+	clusters_dic = grevia.subgraphs_doc_info(subgraph_list,document_index_dic)
 	# Save the data
 	grevia.save_classification_from_dic_to_file(clusters_dic,csv_file)
 	print('Graph and classification done.')
