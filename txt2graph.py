@@ -108,9 +108,9 @@ def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
 	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
 
 	# Merge the strongly connected nodes
-	GS = grevia.merge_strongly_connected_nodes_fast(GS,min_weight,max_iter)
-	print('New graph size:')
-	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
+	#GS = grevia.merge_strongly_connected_nodes_fast(GS,min_weight,max_iter)
+	#print('New graph size:')
+	#print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
 	# Normalize the weights and cut the weakest links 
 	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
 	# Save graph
@@ -151,8 +151,10 @@ def doc_classif_db(graph_name,document_index_dic,csv_file):
 	""" Classification of the documents from the graph,
 	using community detection.
 	"""
-	#G = nx.read_gpickle(graph_name)
+
 	wordG = grevia.wordgraph.Graph.load_from_file(graph_name)
+
+
 	docG = grevia.make_document_graph(wordG)
 	print('Graph of documents created.')
 	print('Nb of edges: {}, nb of nodes: {}'.format(docG.number_of_edges(),docG.number_of_nodes()))
