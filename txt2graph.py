@@ -152,7 +152,7 @@ def doc_classif_db(graph_name,document_index_dic,csv_file):
 	using community detection.
 	"""
 
-	wordG = grevia.wordgraph.Graph.load_from_file(graph_name)
+	wordG = grevia.wordgraph.Graph.load_graph()#from_file(graph_name)
 
 
 	docG = grevia.make_document_graph(wordG)
