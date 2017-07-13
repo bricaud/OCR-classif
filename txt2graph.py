@@ -166,7 +166,7 @@ def doc_classif_db(graph_name,graph_server_address,document_index_dic,csv_file):
 	print('Nb of connected components: ',docG.number_connected_components())
 	# Run the community detection
 	print('Running the community detection...')
-	subgraph_list = grevia.cluster_graph(docG,20)
+	subgraph_list = grevia.cluster_graph(docG,3)
 	grevia.clusters_info(subgraph_list)
 	# Attach the documents infos
 	clusters_dic = grevia.subgraphs_doc_info(subgraph_list,document_index_dic)
