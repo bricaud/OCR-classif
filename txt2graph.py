@@ -147,12 +147,12 @@ def doc_classif(graph_name,text_pickle_file,EX_TXT_PICKLE,csv_file):
 	print('Graph and classification done.')
 
 """
-def doc_classif_db(graph_name,document_index_dic,csv_file):
+def doc_classif_db(graph_name,graph_server_address,document_index_dic,csv_file):
 	""" Classification of the documents from the graph,
 	using community detection.
 	"""
 
-	wordG = grevia.wordgraph.Graph.load_graph()#from_file(graph_name)
+	wordG = grevia.wordgraph.Graph.load_graph(graph_server_address)#from_file(graph_name)
 
 
 	docG = grevia.make_document_graph(wordG)
