@@ -83,13 +83,13 @@ def run(TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
 	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes())
 	return output_message
 """
-def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
+def run_from_db(db_entries_dic,GRAPH_SERVER_ADDRESS,GRAPH_FILE_NAME,min_weight,max_iter):
 	""" Create the graph from the dataframe of texts."""
 
 	data_dic = db_entries_dic
 	# Construct the graph
 	print('Creating the graph with threshold = {} ...'.format(min_weight))
-	GS = grevia.wordgraph.Graph()
+	GS = grevia.wordgraph.Graph(GRAPH_SERVER_ADDRESS)
 	# initiate the progress bar
 	nb_of_texts = len(data_dic)
 	pbar = tqdm.tqdm(total=nb_of_texts)
@@ -115,7 +115,7 @@ def run_from_db(db_entries_dic,GRAPH_NAME,min_weight,max_iter):
 	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
 	# Save graph
 	#nx.write_gpickle(GS,GRAPH_NAME)
-	GS.save_to_file(GRAPH_NAME)
+	GS.save_to_file(GRAPH_FILE_NAME)
 	node_dic = grevia.node_dic_from_graph(GS)
 	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes())
 	return node_dic,output_message
