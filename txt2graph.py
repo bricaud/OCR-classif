@@ -46,76 +46,35 @@ def filter_text(text):
 	text = text.lower()
 	filtered_text = re.findall('\w+', str(text), re.UNICODE)
 	return filtered_text
-"""
-def run(TXT_PICKLE,GRAPH_NAME,min_weight,max_iter):
-	"" Create the graph from the dataframe of texts.""
-	loaded_data = read_file(TXT_PICKLE)
-	data_dic = loaded_data[0]
-	data_index = loaded_data[1]
 
-	# Construct the graph
-	print('Creating the graph with threshold = {} ...'.format(min_weight))
-	GS = grevia.WordGraph()
-	# initiate the progress bar
-	nb_of_texts = len(data_dic)
-	pbar = tqdm.tqdm(total=nb_of_texts)
-	for key in data_dic.keys():
-		data_elem = data_dic[key]
-		text_id = data_elem['id']
-		list_of_words = filter_text(data_elem['text'])
-		#text_data = {}
-		#text_data['length'] = len(list_of_words)
-		document = grevia.Document(text_id,list_of_words)
-		GS = grevia.add_document(GS,document)
-		pbar.update(1)
-	pbar.close()
-	print('Graph created.')
-	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
 
-	# Merge the strongly connected nodes
-	GS = grevia.merge_strongly_connected_nodes_fast(GS,min_weight,max_iter)
-	print('New graph size:')
-	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
-	# Normalize the weights and cut the weakest links 
-	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
-	# Save graph
-	nx.write_gpickle(GS,GRAPH_NAME)
-	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes())
-	return output_message
-"""
-def run_from_db(db_entries_dic,GRAPH_SERVER_ADDRESS,GRAPH_FILE_NAME,min_weight,max_iter):
-	""" Create the graph from the dataframe of texts."""
 
+def run_from_db(db_entries_dic,graphdb):
+	""" Create the graph from the Django database of documents."""
 	data_dic = db_entries_dic
 	# Construct the graph
-	print('Creating the graph with threshold = {} ...'.format(min_weight))
-	GS = grevia.wordgraph.Graph(GRAPH_SERVER_ADDRESS)
+	#print('Creating the graph...')
+	GS = graphdb
+	#GS = grevia.wordgraph.Graph('GremlinGraph',GRAPH_SERVER_ADDRESS)
 	# initiate the progress bar
 	nb_of_texts = len(data_dic)
+	print('Nb of texts:',nb_of_texts)
 	pbar = tqdm.tqdm(total=nb_of_texts)
 	for key in data_dic.keys():
 		data_elem = data_dic[key]
 		text_id = data_elem['id']
 		list_of_words = filter_text(data_elem['text'])
-		#text_data = {}
-		#text_data['length'] = len(list_of_words)
 		document = grevia.Document(text_id,list_of_words,key)
-		#GS = grevia.add_document(GS,document)
-		GS = grevia.add_merge_document(GS,document)
+		#GS = grevia.add_merge_document(GS,document)
+		miniG = grevia.minigraph.create_minigraph(GS,document)
+		grevia.minigraph.merge_minigraph(miniG,GS)
 		pbar.update(1)
 	pbar.close()
 	print('Graph created.')
 	print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
-
-	# Merge the strongly connected nodes
-	#GS = grevia.merge_strongly_connected_nodes_fast(GS,min_weight,max_iter)
-	#print('New graph size:')
-	#print('Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes()))
-	# Normalize the weights and cut the weakest links 
-	#GS = grevia.normalize_weights(GS,weight=None,weight_n='weight_n')
 	# Save graph
 	#nx.write_gpickle(GS,GRAPH_NAME)
-	GS.save_to_file(GRAPH_FILE_NAME)
+	#GS.save_to_file(GRAPH_FILE_NAME)
 	node_dic = grevia.node_dic_from_graph(GS)
 	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes())
 	return node_dic,output_message
@@ -152,7 +111,7 @@ def doc_classif_db(graph_server_address,document_index_dic,csv_file):
 	using community detection.
 	"""
 
-	wordG = grevia.wordgraph.Graph.load_graph(graph_server_address)#from_file(graph_name)
+	wordG = grevia.wordgraph.Graph('GremlinGraph',graph_server_address)#from_file(graph_name)
 
 
 	docG = grevia.make_document_graph(wordG)
