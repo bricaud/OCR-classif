@@ -40,6 +40,12 @@ def get_surrounding_text(doc_text,position,nb_words=10):
 	else:
 		return " ".join(text_list[start:position+nb_words])
 
+def get_surrounding_text_sliced(doc_text,position,expression_len,nb_words=10):
+	text_list = filter_text(doc_text)
+	start = max(0,position-nb_words)
+	end = min(position+nb_words,len(doc_text))
+	return text_list[start:position],text_list[position+expression_len:end]
+
 
 def filter_text(text):
 	""" filter the text: apply lower case and keep letters and numbers"""
