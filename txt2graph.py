@@ -41,19 +41,21 @@ def get_surrounding_text(doc_text,position,nb_words=10):
 		return " ".join(text_list[start:position+nb_words])
 
 def get_surrounding_text_sliced(doc_text,position,expression_len,nb_words=10):
-	text_list =  re.findall('\w+', str(doc_text), re.UNICODE) #filter_text(doc_text)
+	text_list =  filter_text(doc_text)
 	start = max(0,position-nb_words)
 	end = min(position+expression_len+nb_words,len(doc_text))
 	return text_list[start:position],text_list[position+expression_len:end]
 
 
 def filter_text(text):
-	""" filter the text: apply lower case and keep letters and numbers"""
-	text = text.lower()
+	""" filter the text: keep letters and numbers"""
 	filtered_text = re.findall('\w+', str(text), re.UNICODE)
 	return filtered_text
 
-
+def filter_text_lower(text):
+	""" filter the text: apply lower case and keep letters and numbers"""
+	text = text.lower()
+	return filter_text(text)
 
 def run_from_db(db_entries_dic,graphdb):
 	""" Create the graph from the Django database of documents."""
@@ -69,7 +71,7 @@ def run_from_db(db_entries_dic,graphdb):
 	for key in data_dic.keys():
 		data_elem = data_dic[key]
 		text_id = data_elem['id']
-		list_of_words = filter_text(data_elem['text'])
+		list_of_words = filter_text_lower(data_elem['text'])
 		document = grevia.Document(text_id,list_of_words,key)
 		#GS = grevia.add_merge_document(GS,document)
 		miniG = grevia.minigraph.create_minigraph(GS,document)
