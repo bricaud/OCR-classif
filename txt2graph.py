@@ -68,6 +68,7 @@ def run_from_db(db_entries_dic,graphdb):
 	nb_of_texts = len(data_dic)
 	print('Nb of texts:',nb_of_texts)
 	pbar = tqdm.tqdm(total=nb_of_texts)
+	similarity_dic = {}
 	for key in data_dic.keys():
 		data_elem = data_dic[key]
 		text_id = data_elem['id']
@@ -75,7 +76,8 @@ def run_from_db(db_entries_dic,graphdb):
 		document = grevia.Document(text_id,list_of_words,key)
 		#GS = grevia.add_merge_document(GS,document)
 		miniG = grevia.minigraph.create_minigraph(GS,document)
-		grevia.minigraph.merge_minigraph(miniG,GS)
+		similar_documents = grevia.minigraph.merge_minigraph(miniG,GS)
+		similarity_dic[text_id] = similar_documents
 		pbar.update(1)
 	pbar.close()
 	print('Graph created.')
@@ -83,37 +85,10 @@ def run_from_db(db_entries_dic,graphdb):
 	# Save graph
 	#nx.write_gpickle(GS,GRAPH_NAME)
 	#GS.save_to_file(GRAPH_FILE_NAME)
-	node_dic = grevia.node_dic_from_graph(GS)
+	#node_dic = grevia.node_dic_from_graph(GS)
 	output_message = 'Graph created. Nb of edges: {}, nb of nodes: {}.'.format(GS.number_of_edges(),GS.number_of_nodes())
-	return node_dic,output_message
-"""
-def doc_classif(graph_name,text_pickle_file,EX_TXT_PICKLE,csv_file):
-	"" Classification of the documents from the graph,
-	using community detection.
-	""
-	G = nx.read_gpickle(graph_name)
-	G_doc = grevia.doc_graph(G)
-	print('Graph of documents created.')
-	print('Nb of edges: {}, nb of nodes: {}'.format(G_doc.number_of_edges(),G_doc.number_of_nodes()))
-	# Shrink the graph
-	#print('Removing weakest links...')
-	#threshold = 5
-	#G_doc = grevia.remove_weak_links(G_doc,threshold,weight='weight')
-	#G_doc.remove_nodes_from(nx.isolates(G_doc))
-	print('Nb of connected components: ',nx.number_connected_components(G_doc))
-	[data_dic,data_index] = read_file(text_pickle_file)
+	return similarity_dic,output_message
 
-	# Get info from the pdf initial files
-	file_infos = read_file(EX_TXT_PICKLE)
-	# Run the community detection
-	print('Running the community detection...')
-	subgraph_list = grevia.cluster_graph(G_doc,20)
-	grevia.clusters_info(subgraph_list)
-	cluster_name_list = grevia.subgraphs_to_filenames_to_dic(subgraph_list,data_index,file_infos,density=True)
-	clusters_table = grevia.output_filename_classification_from_dic(cluster_name_list,csv_file)
-	print('Graph and classification done.')
-
-"""
 def doc_classif_db(graph_server_address,document_index_dic,csv_file):
 	""" Classification of the documents from the graph,
 	using community detection.
